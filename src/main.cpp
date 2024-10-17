@@ -97,8 +97,8 @@ double r[ARR_LEN];
         double s = tm.span(t0, tm.current()); \
         double mps = sec2mps(s, n * ARR_LEN); \
         exit_critical(); \
-        pros::delay(1000); \
-        printf("  %-8s:  %7.4f MPS\n", #FNAME, mps); }
+        printf("  %-8s:  %7.4f MPS\n", #FNAME, mps); \
+        pros::delay(100); }
 
 #define TFUN2(FNAME) \
     void test_##FNAME(long n) { \
@@ -112,8 +112,8 @@ double r[ARR_LEN];
         double s = tm.span(t0, tm.current()); \
         double mps = sec2mps(s, n * ARR_LEN); \
         exit_critical(); \
-        pros::delay(1000); \
-        printf("  %-8s:  %7.4f MPS\n", #FNAME, mps); }
+        printf("  %-8s:  %7.4f MPS\n", #FNAME, mps); \
+        pros::delay(100); }
 
 
 #define TCALL(FNAME) test_##FNAME(20000)
@@ -138,7 +138,7 @@ void initialize()
 {
     pros::delay(2000);
     printf("starting \n");
-    pros::delay(1000);
+    pros::delay(100);
     // initialize array contents
     for (int i = 0; i < ARR_LEN; ++i)
     {
