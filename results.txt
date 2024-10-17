@@ -1,12 +1,12 @@
-  pow     :   3.7476 MPS
-  hypot   :   4.8171 MPS
-  exp     :  15.9113 MPS
-  log     :  12.6943 MPS
-  log10   :   3.5244 MPS
-  sin     :  11.0463 MPS
-  cos     :   6.1652 MPS
-  tan     :   3.5453 MPS
-  asin    :   2.6849 MPS
-  acos    :   2.6002 MPS
-  atan    :   5.4122 MPS
-  atan2   :   3.4885 MPS
+pow     :   0.0994 MPS
+hypot   :   0.4551 MPS
+exp     :   0.4365 MPS
+log     :   0.3782 MPS
+log10   :   0.3539 MPS
+sin     :   0.7135 MPS
+cos     :   0.6014 MPS
+tan     :   0.3333 MPS
+asin    :   0.2432 MPS
+acos    :   0.2718 MPS
+atan    :   0.3682 MPS
+atan2   :   0.2954 MPS
