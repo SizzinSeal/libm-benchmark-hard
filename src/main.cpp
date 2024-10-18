@@ -5,12 +5,13 @@
 #include "main.h"
 
 // macros to enter / exit critical section
-#define enter_critical() asm("cpsid i"); asm("dsb"); asm("isb")
-#define exit_critical() asm("cpsie i"); asm("dsb"); asm("isb")
+#define enter_critical() asm volatile("cpsid i\n\tdsb\n\tisb")
+#define exit_critical() asm volatile("cpsie i\n\tdsb\n\tisb")
+#define CONSUME(x) asm volatile("" :: "r,m" (x))
 
 // constants
-const int array_length = 1024;
-const int num_tests = 20000;
+constexpr int array_length = 1024;
+constexpr int num_tests = 20000;
 
 void test_pow() {
 // announce start of program
@@ -19,8 +20,8 @@ void test_pow() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
-    int brray[array_length];
+    double array[array_length];
+    double brray[array_length];
     for (int i = 0; i < array_length; i++) {
         array[i] = random();
         brray[i] = random();
@@ -29,12 +30,12 @@ void test_pow() {
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = pow(array[j], brray[j]);
+            double cpp_makes_me_sad = pow(array[j], brray[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -55,8 +56,8 @@ void test_hypot() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
-    int brray[array_length];
+    double array[array_length];
+    double brray[array_length];
     for (int i = 0; i < array_length; i++) {
         array[i] = random();
         brray[i] = random();
@@ -65,12 +66,12 @@ void test_hypot() {
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = hypot(array[j], brray[j]);
+            double cpp_makes_me_sad = hypot(array[j], brray[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -91,18 +92,18 @@ void test_exp() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = exp(array[j]);
+            double cpp_makes_me_sad = exp(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -123,18 +124,18 @@ void test_log() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = log(array[j]);
+            double cpp_makes_me_sad = log(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -155,18 +156,18 @@ void test_log10() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = log10(array[j]);
+            double cpp_makes_me_sad = log10(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -187,18 +188,18 @@ void test_sin() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = sin(array[j]);
+            double cpp_makes_me_sad = sin(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -219,18 +220,18 @@ void test_cos() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = cos(array[j]);
+            double cpp_makes_me_sad = cos(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -251,18 +252,18 @@ void test_tan() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = tan(array[j]);
+            double cpp_makes_me_sad = tan(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -283,18 +284,18 @@ void test_asin() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = asin(array[j]);
+            double cpp_makes_me_sad = asin(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -315,18 +316,18 @@ void test_acos() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = acos(array[j]);
+            double cpp_makes_me_sad = acos(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -347,18 +348,18 @@ void test_atan() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
+    double array[array_length];
     for (int i = 0; i < array_length; i++) array[i] = random();
     printf("done generating random numbers... \n");
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = atan(array[j]);
+            double cpp_makes_me_sad = atan(array[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
@@ -379,8 +380,8 @@ void test_atan2() {
     pros::c::delay(50);
 
     // generate random numbers
-    int array[array_length];
-    int brray[array_length];
+    double array[array_length];
+    double brray[array_length];
     for (int i = 0; i < array_length; i++) {
         array[i] = random();
         brray[i] = random();
@@ -389,12 +390,12 @@ void test_atan2() {
     pros::c::delay(50);
 
     // run the computations
-    volatile double cpp_makes_me_sad;
     enter_critical();
     const uint64_t start = pros::c::micros();
     for (int i = 0; i < num_tests; i++) {
         for (int j = 0; j < array_length; j++) {
-            cpp_makes_me_sad = atan2(array[j], brray[j]);
+            double cpp_makes_me_sad = atan2(array[j], brray[j]);
+            CONSUME(cpp_makes_me_sad);
         }
     }
     const uint64_t current = pros::c::micros();
