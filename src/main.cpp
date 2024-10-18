@@ -1,161 +1,424 @@
-// Copyright (C) Dahua Lin, 2014. Provided under the MIT license.
-
-// Benchmark on libm functions
-
-#include <math.h>
-#include <time.h>
+#include "pros/rtos.h"
+#include <cstdint>
 #include <stdio.h>
-#include <stdlib.h>
+#include <math.h>
 #include "main.h"
 
+// macros to enter / exit critical section
 #define enter_critical() asm("cpsid i"); asm("dsb"); asm("isb")
-
 #define exit_critical() asm("cpsie i"); asm("dsb"); asm("isb")
 
+// constants
+const int array_length = 1024;
+const int num_tests = 20000;
 
-// Timing facilities
+void test_pow() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
 
-#ifdef __MACH__
-
-#include <mach/mach_time.h>
-
-class stimer
-{
-public:
-    typedef uint64_t time_type;
-
-    stimer()
-    {
-        ::mach_timebase_info(&m_baseinfo);
+    // generate random numbers
+    int array[array_length];
+    int brray[array_length];
+    for (int i = 0; i < array_length; i++) {
+        array[i] = random();
+        brray[i] = random();
     }
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
 
-    time_type current() const
-    {
-        return ::mach_absolute_time();
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = pow(array[j], brray[j]);
+        }
     }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
 
-    double span(const time_type& t0, const time_type& t1) const
-    {
-        uint64_t d = (m_baseinfo.numer * (t1 - t0)) / m_baseinfo.denom;
-        return static_cast<double>(d) / 1.0e9;
-    }
-
-private:
-    mach_timebase_info_data_t m_baseinfo;
-};
-
-#else
-
-class stimer
-{
-public:
-    typedef timespec time_type;
-
-    time_type current() const
-    {
-        time_type t;
-        const uint64_t raw_time = pros::micros();
-        t.tv_sec = raw_time / 1000000;
-        t.tv_nsec = raw_time * 1000;
-        return t;
-    }
-
-    double span(const time_type& t0, const time_type& t1) const
-    {
-        return double(t1.tv_sec - t0.tv_sec) +
-            double(t1.tv_nsec - t0.tv_nsec) * 1.0e-9;
-    }
-};
-
-#endif
-
-
-// s - time in nanoseconds
-// n - number of calculations
-inline double sec2mps(double s, long n)
-{
-    // number of calculations per second
-    return n / (s * 1e6);
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("pow:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
 }
 
+void test_hypot() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
 
-const long ARR_LEN = 1024;
-
-double a[ARR_LEN];
-double b[ARR_LEN];
-double r[ARR_LEN];
-
-#define TFUN1(FNAME) \
-    void test_##FNAME(long n) { \
-        enter_critical(); \
-        for (int j = 0; j < ARR_LEN; ++j) r[j] = FNAME(a[j]); \
-        stimer tm; \
-        stimer::time_type t0 = tm.current(); \
-        for(int i = 0; i < n; ++i) { \
-            for (int j = 0; j < ARR_LEN; ++j) r[j] = FNAME(a[j]); \
-        } \
-        double s = tm.span(t0, tm.current()); \
-        double mps = sec2mps(s, n * ARR_LEN); \
-        exit_critical(); \
-        printf("  %-8s:  %7.4f MPS\n", #FNAME, mps); \
-        pros::delay(100); }
-
-#define TFUN2(FNAME) \
-    void test_##FNAME(long n) { \
-        enter_critical(); \
-        for (int j = 0; j < ARR_LEN; ++j) r[j] = FNAME(a[j], b[j]); \
-        stimer tm; \
-        stimer::time_type t0 = tm.current(); \
-        for(int i = 0; i < n; ++i) { \
-            for (int j = 0; j < ARR_LEN; ++j) r[j] = FNAME(a[j], b[j]); \
-        } \
-        double s = tm.span(t0, tm.current()); \
-        double mps = sec2mps(s, n * ARR_LEN); \
-        exit_critical(); \
-        printf("  %-8s:  %7.4f MPS\n", #FNAME, mps); \
-        pros::delay(100); }
-
-
-#define TCALL(FNAME) test_##FNAME(20000)
-
-// define benchmark functions
-
-TFUN2(pow)
-TFUN2(hypot)
-
-TFUN1(exp)
-TFUN1(log)
-TFUN1(log10)
-TFUN1(sin)
-TFUN1(cos)
-TFUN1(tan)
-TFUN1(asin)
-TFUN1(acos)
-TFUN1(atan)
-TFUN2(atan2)
-
-void initialize()
-{
-    pros::delay(2000);
-    printf("starting \n");
-    pros::delay(100);
-    // initialize array contents
-    for (int i = 0; i < ARR_LEN; ++i)
-    {
-      a[i] = rand() / (double) RAND_MAX;
-      b[i] = rand() / (double) RAND_MAX;
+    // generate random numbers
+    int array[array_length];
+    int brray[array_length];
+    for (int i = 0; i < array_length; i++) {
+        array[i] = random();
+        brray[i] = random();
     }
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
 
-    TCALL(pow);
-    TCALL(hypot);
-    TCALL(exp);
-    TCALL(log);
-    TCALL(log10);
-    TCALL(sin);
-    TCALL(cos);
-    TCALL(tan);
-    TCALL(asin);
-    TCALL(acos);
-    TCALL(atan);
-    TCALL(atan2);
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = hypot(array[j], brray[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("hypot:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_exp() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = exp(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("exp:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_log() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = log(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("log:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_log10() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = log10(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("log10:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_sin() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = sin(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("sin:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_cos() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = cos(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("cos:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_tan() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = tan(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("tan:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_asin() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = asin(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("asin:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_acos() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = acos(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("acos:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_atan() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    for (int i = 0; i < array_length; i++) array[i] = random();
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = atan(array[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("atan:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void test_atan2() {
+// announce start of program
+    pros::c::delay(1000);
+    printf("\nstarting... \n");
+    pros::c::delay(50);
+
+    // generate random numbers
+    int array[array_length];
+    int brray[array_length];
+    for (int i = 0; i < array_length; i++) {
+        array[i] = random();
+        brray[i] = random();
+    }
+    printf("done generating random numbers... \n");
+    pros::c::delay(50);
+
+    // run the computations
+    volatile double cpp_makes_me_sad;
+    enter_critical();
+    const uint64_t start = pros::c::micros();
+    for (int i = 0; i < num_tests; i++) {
+        for (int j = 0; j < array_length; j++) {
+            cpp_makes_me_sad = atan2(array[j], brray[j]);
+        }
+    }
+    const uint64_t current = pros::c::micros();
+    exit_critical();
+
+    // announce computation results
+    const uint64_t duration = current - start;
+    printf("atan2:\n");
+    printf("Number of tests: %i \n", num_tests * array_length);
+    printf("Duration of tests: %lli \n", duration);
+    printf("computations per microsecond: %f \n", double(num_tests * array_length) / double(duration));
+}
+
+void initialize() {
+    test_pow();
+    test_hypot();
+    test_exp();
+    test_log();
+    test_log10();
+    test_sin();
+    test_cos();
+    test_tan();
+    test_asin();
+    test_acos();
+    test_atan();
+    test_atan2();
 }
